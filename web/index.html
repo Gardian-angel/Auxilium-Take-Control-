@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="INPROV – Native Wellbeing &amp; Mood Tracking App">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="INPROV">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>INPROV</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Google Identity Services (GIS) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <script>
+    // ─── Google Identity Services bridge ─────────────────────────────────────
+    // Called by GIS after the user approves sign-in
+    function _gisHandleCredential(response) {
+      if (window._gisCallback) {
+        window._gisCallback(response.credential);
+        window._gisCallback = null;
+      }
+    }
+
+    // Called from Dart via dart:js_interop
+    function gisInitAndPrompt(clientId, dartCallback) {
+      window._gisCallback = dartCallback;
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: _gisHandleCredential,
+        auto_select: true,
+      });
+      google.accounts.id.prompt();
+    }
+
+    function gisRenderButton(elementId, clientId, dartCallback) {
+      window._gisCallback = dartCallback;
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: _gisHandleCredential,
+        auto_select: true,
+      });
+      google.accounts.id.renderButton(
+        document.getElementById(elementId),
+        { theme: 'outline', size: 'large', width: '100%' }
+      );
+    }
+
+    function gisCancelPrompt() {
+      if (window.google && google.accounts && google.accounts.id) {
+        google.accounts.id.cancel();
+      }
+    }
+
+    // ─── Geolocation bridge ───────────────────────────────────────────────────
+    // Returns {lat, lng, accuracy} via callback, or {error} on failure.
+    // Mirrors the GPS-first-then-fallback pattern used by resolveUserLocation.
+    function getWebLocation(dartCallback) {
+      if (!navigator.geolocation) {
+        dartCallback(null, null, null, 'Geolocation not supported');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          dartCallback(
+            position.coords.latitude,
+            position.coords.longitude,
+            position.coords.accuracy,
+            null
+          );
+        },
+        function(error) {
+          // Silent fallback — caller decides what to do with a null result
+          console.warn('Location denied (' + error.message + ') — silent fallback');
+          dartCallback(null, null, null, error.message);
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+      );
+    }
+
+    // Promise-based location resolver with fallback (used internally by JS code)
+    function resolveUserLocation() {
+      return new Promise(function(resolve) {
+        if (!navigator.geolocation) {
+          console.log('Geolocation not supported — using fallback');
+          return resolve(null);
+        }
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            resolve({
+              source: 'gps',
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+          },
+          function(error) {
+            console.warn('Location denied (' + error.message + ') — silent fallback');
+            resolve(null);
+          },
+          { timeout: 5000, enableHighAccuracy: false }
+        );
+      });
+    }
+  </script>
+</head>
+<body>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
