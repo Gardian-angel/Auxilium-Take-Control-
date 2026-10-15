@@ -156,7 +156,7 @@ class _RecentHistory extends ConsumerWidget {
             trailing: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('${(e.satisfaction * 10).toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text('${(e.satisfaction * 100).round()}%', style: const TextStyle(fontWeight: FontWeight.bold)),
                 const Text('satisfaction', style: TextStyle(fontSize: 10)),
               ],
             ),

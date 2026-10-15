@@ -14,6 +14,7 @@ import '../../features/analytics/screens/analytics_screen.dart';
 import '../../features/calendar/screens/calendar_screen.dart';
 import '../../features/collaboration/screens/collaboration_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/billing/paywall_screen.dart';
 
 /// One router for the app's lifetime. It re-runs [GoRouter.redirect] whenever
 /// the Firebase auth state changes, instead of being rebuilt.
@@ -40,6 +41,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
       GoRoute(
           path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
+      GoRoute(path: '/paywall', builder: (_, __) => const PaywallScreen()),
       ShellRoute(
         builder: (context, state, child) => AppShell(child: child),
         routes: [

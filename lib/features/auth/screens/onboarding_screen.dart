@@ -17,7 +17,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   String _displayName = '';
   String _timezone = 'UTC';
-  bool _calendarConnected = false;
   bool _loading = false;
 
   static const _timezones = [
@@ -26,7 +25,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   ];
 
   void _next() {
-    if (_page < 2) {
+    if (_page < 1) {
       _pageCtrl.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
     } else {
       _finish();
@@ -46,7 +45,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: Column(
           children: [
             LinearProgressIndicator(
-              value: (_page + 1) / 3,
+              value: (_page + 1) / 2,
               color: AppColors.primary,
               backgroundColor: AppColors.primary.withOpacity(0.15),
             ),
@@ -61,14 +60,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     onTimezoneChanged: (v) => _timezone = v,
                     timezones: _timezones,
                   ),
-                  _Step2(
-                    connected: _calendarConnected,
-                    onConnect: () async {
-                      // Calendar connection logic goes here
-                      setState(() => _calendarConnected = true);
-                    },
-                  ),
-                  const _Step3(),
+                  const _Step2(),
                 ],
               ),
             ),
@@ -79,7 +71,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: _loading
                     ? const SizedBox(height: 20, width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(_page < 2 ? 'Continue' : 'Get started'),
+                    : Text(_page < 1 ? 'Continue' : 'Get started'),
               ),
             ),
           ],
@@ -128,46 +120,7 @@ class _Step1 extends StatelessWidget {
 }
 
 class _Step2 extends StatelessWidget {
-  final bool connected;
-  final VoidCallback onConnect;
-  const _Step2({required this.connected, required this.onConnect});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 40),
-          Text('Connect your calendar', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          const Text('Sync events and reminders with your mood logs'),
-          const SizedBox(height: 40),
-          ListTile(
-            tileColor: Theme.of(context).colorScheme.surfaceVariant,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            leading: const Icon(Icons.calendar_today_rounded),
-            title: const Text('Google Calendar'),
-            trailing: connected
-                ? const Icon(Icons.check_circle_rounded, color: Colors.green)
-                : ElevatedButton(onPressed: onConnect, child: const Text('Connect')),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child: const Text('Skip for now'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Step3 extends StatelessWidget {
-  const _Step3();
+  const _Step2();
 
   @override
   Widget build(BuildContext context) {

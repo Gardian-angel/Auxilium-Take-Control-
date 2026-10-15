@@ -171,15 +171,8 @@ class _BillingTab extends StatelessWidget {
                 const Text('Basic mood tracking'),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () {},
-                  child: const Text('Upgrade to Premium — \$4.99/mo'),
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: TextButton(
-                    onPressed: () {},
-                    child: const Text('Restore purchases'),
-                  ),
+                  onPressed: () => context.push('/paywall'),
+                  child: const Text('See Premium plans'),
                 ),
               ],
             ),
