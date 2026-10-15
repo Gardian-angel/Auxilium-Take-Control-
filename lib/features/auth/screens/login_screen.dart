@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../core/theme/app_theme.dart';
 
@@ -62,6 +63,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } on FirebaseAuthException catch (e) {
       setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // Required by App Review 4.8 whenever Google sign-in is offered on iOS.
+  bool get _showApple => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+  Future<void> _signInApple() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final provider = AppleAuthProvider()
+        ..addScope('email')
+        ..addScope('name');
+      await FirebaseAuth.instance.signInWithProvider(provider);
+    } on FirebaseAuthException catch (e) {
+      // The user closing the Apple sheet is not an error worth showing.
+      if (e.code != 'canceled' && e.code != 'web-context-canceled') {
+        setState(() => _error = e.message);
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -162,6 +183,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const Expanded(child: Divider()),
                     ]),
                     const SizedBox(height: 24),
+                    if (_showApple) ...[
+                      IgnorePointer(
+                        ignoring: _loading,
+                        child: SignInWithAppleButton(
+                          onPressed: _signInApple,
+                          height: 52,
+                          borderRadius: const BorderRadius.all(Radius.circular(12)),
+                          style: Theme.of(context).brightness == Brightness.dark
+                              ? SignInWithAppleButtonStyle.white
+                              : SignInWithAppleButtonStyle.black,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     OutlinedButton.icon(
                       onPressed: _loading ? null : _signInGoogle,
                       icon: const Icon(Icons.g_mobiledata, size: 24),

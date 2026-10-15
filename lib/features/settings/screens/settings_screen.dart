@@ -1,6 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../../core/legal_links.dart';
+import '../../../core/services/app_lock.dart';
+import '../../../core/services/reminder_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   final String tab;
@@ -78,6 +84,7 @@ class _AccountTab extends StatelessWidget {
           title: const Text('Accessibility'),
           onTap: () {},
         ),
+        const _ReminderTile(),
         const Divider(),
         ListTile(
           leading: const Icon(Icons.logout),
@@ -204,31 +211,87 @@ class _SecurityTab extends StatelessWidget {
             }
           },
         ),
-        SwitchListTile(
-          secondary: const Icon(Icons.security),
-          title: const Text('Two-factor authentication'),
-          subtitle: const Text('Coming soon'),
-          value: false,
-          onChanged: null,
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.fingerprint),
-          title: const Text('Biometric login'),
-          value: false,
-          onChanged: (_) {},
-        ),
+        const _AppLockTile(),
         const Divider(),
-        ListTile(
-          leading: const Icon(Icons.privacy_tip_outlined),
-          title: const Text('Privacy policy'),
-          onTap: () {},
-        ),
+        if (privacyPolicyUrl.isNotEmpty)
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacy policy'),
+            onTap: () => launchUrl(Uri.parse(privacyPolicyUrl)),
+          ),
         ListTile(
           leading: const Icon(Icons.description_outlined),
-          title: const Text('Terms of service'),
-          onTap: () {},
+          title: const Text('Terms of use'),
+          onTap: () => launchUrl(Uri.parse(termsUrl)),
         ),
       ],
+    );
+  }
+}
+
+class _ReminderTile extends ConsumerStatefulWidget {
+  const _ReminderTile();
+
+  @override
+  ConsumerState<_ReminderTile> createState() => _ReminderTileState();
+}
+
+class _ReminderTileState extends ConsumerState<_ReminderTile> {
+  ReminderService get _reminders => ref.read(reminderServiceProvider);
+
+  Future<void> _turnOn() async {
+    final picked = await showTimePicker(context: context, initialTime: _reminders.time);
+    if (picked == null) return;
+    final ok = await _reminders.enable(picked);
+    if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Notifications are off for INPROV. You can allow them in Settings.'),
+      ));
+    }
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final on = _reminders.enabled;
+    return SwitchListTile(
+      secondary: const Icon(Icons.notifications_active_outlined),
+      title: const Text('Daily check-in reminder'),
+      subtitle: Text(on ? 'Every day at ${_reminders.time.format(context)}' : 'Off'),
+      value: on,
+      onChanged: (v) async {
+        if (v) {
+          await _turnOn();
+        } else {
+          await _reminders.disable();
+          if (mounted) setState(() {});
+        }
+      },
+    );
+  }
+}
+
+class _AppLockTile extends StatelessWidget {
+  const _AppLockTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: AppLock.isAvailable(),
+      builder: (context, snap) {
+        if (snap.data != true) return const SizedBox.shrink();
+        return ValueListenableBuilder(
+          valueListenable: AppLock.listenable,
+          builder: (context, _, __) => SwitchListTile(
+            secondary: const Icon(Icons.fingerprint),
+            title: const Text('Lock with Face ID / fingerprint'),
+            subtitle: const Text('Ask to unlock each time INPROV opens'),
+            value: AppLock.enabled,
+            onChanged: (v) => AppLock.setEnabled(v),
+          ),
+        );
+      },
     );
   }
 }

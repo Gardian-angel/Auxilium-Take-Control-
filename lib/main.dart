@@ -7,6 +7,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import 'core/navigation/app_router.dart';
+import 'core/services/app_lock.dart';
 import 'core/theme/app_theme.dart';
 
 @pragma('vm:entry-point')
@@ -62,6 +63,7 @@ class InprovApp extends ConsumerWidget {
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
       routerConfig: ref.watch(appRouterProvider),
+      builder: (context, child) => AppLockGate(child: child!),
       debugShowCheckedModeBanner: false,
     );
   }

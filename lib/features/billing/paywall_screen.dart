@@ -4,16 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/legal_links.dart';
+
 /// RevenueCat entitlement that unlocks Premium.
 const premiumEntitlement = 'premium';
-
-// Legal links shown next to the subscription, required by App Review 3.1.2.
-//   flutter build ipa --dart-define=PRIVACY_POLICY_URL=https://...
-const _termsUrl = String.fromEnvironment(
-  'TERMS_URL',
-  defaultValue: 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
-);
-const _privacyUrl = String.fromEnvironment('PRIVACY_POLICY_URL');
 
 bool get _isApple => defaultTargetPlatform == TargetPlatform.iOS;
 String get _account => _isApple ? 'Apple ID' : 'Google account';
@@ -175,12 +169,12 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     alignment: WrapAlignment.center,
                     children: [
                       TextButton(
-                        onPressed: () => launchUrl(Uri.parse(_termsUrl)),
+                        onPressed: () => launchUrl(Uri.parse(termsUrl)),
                         child: const Text('Terms of Use'),
                       ),
-                      if (_privacyUrl.isNotEmpty)
+                      if (privacyPolicyUrl.isNotEmpty)
                         TextButton(
-                          onPressed: () => launchUrl(Uri.parse(_privacyUrl)),
+                          onPressed: () => launchUrl(Uri.parse(privacyPolicyUrl)),
                           child: const Text('Privacy Policy'),
                         ),
                     ],
