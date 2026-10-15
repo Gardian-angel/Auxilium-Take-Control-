@@ -1,4 +1,4 @@
-package com.inprov.app
+package com.base68ad6941fe7e499d4b0516e7.app
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
