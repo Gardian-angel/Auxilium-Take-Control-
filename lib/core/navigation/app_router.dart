@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,54 +15,76 @@ import '../../features/calendar/screens/calendar_screen.dart';
 import '../../features/collaboration/screens/collaboration_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 
+/// One router for the app's lifetime. It re-runs [GoRouter.redirect] whenever
+/// the Firebase auth state changes, instead of being rebuilt.
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authStateProvider);
-  return AppRouter._build(ref, auth);
+  final auth = ref.watch(firebaseAuthProvider);
+  final refresh = _StreamListenable(auth.authStateChanges());
+  ref.onDispose(refresh.dispose);
+
+  return GoRouter(
+    initialLocation: '/login',
+    refreshListenable: refresh,
+    redirect: (context, state) {
+      final loggedIn = auth.currentUser != null;
+      final onAuth = state.matchedLocation == '/login' ||
+          state.matchedLocation == '/signup' ||
+          state.matchedLocation.startsWith('/onboarding');
+      if (!loggedIn && !onAuth) return '/login';
+      if (loggedIn && onAuth && state.matchedLocation != '/onboarding')
+        return '/dashboard';
+      return null;
+    },
+    routes: [
+      GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
+      GoRoute(
+          path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
+      ShellRoute(
+        builder: (context, state, child) => AppShell(child: child),
+        routes: [
+          GoRoute(path: '/dashboard', builder: (_, __) => const HomeScreen()),
+          GoRoute(
+              path: '/analytics', builder: (_, __) => const AnalyticsScreen()),
+          GoRoute(
+              path: '/calendar', builder: (_, __) => const CalendarScreen()),
+          GoRoute(
+              path: '/collaboration',
+              builder: (_, __) => const CollaborationScreen()),
+          GoRoute(
+            path: '/settings',
+            builder: (_, __) => const SettingsScreen(),
+            routes: [
+              GoRoute(
+                  path: 'account',
+                  builder: (_, __) => const SettingsScreen(tab: 'account')),
+              GoRoute(
+                  path: 'connections',
+                  builder: (_, __) => const SettingsScreen(tab: 'connections')),
+              GoRoute(
+                  path: 'billing',
+                  builder: (_, __) => const SettingsScreen(tab: 'billing')),
+              GoRoute(
+                  path: 'security',
+                  builder: (_, __) => const SettingsScreen(tab: 'security')),
+            ],
+          ),
+        ],
+      ),
+    ],
+  );
 });
 
-abstract final class AppRouter {
-  static late GoRouter router;
-
-  static void init(WidgetRef ref) {
-    router = _build(ref, ref.read(authStateProvider));
+class _StreamListenable extends ChangeNotifier {
+  _StreamListenable(Stream<dynamic> stream) {
+    _sub = stream.listen((_) => notifyListeners());
   }
 
-  static GoRouter _build(Ref ref, AsyncValue authState) {
-    return GoRouter(
-      initialLocation: '/login',
-      redirect: (context, state) {
-        final loggedIn = authState.valueOrNull != null;
-        final onAuth = state.matchedLocation == '/login' ||
-            state.matchedLocation == '/signup' ||
-            state.matchedLocation.startsWith('/onboarding');
-        if (!loggedIn && !onAuth) return '/login';
-        if (loggedIn && onAuth && state.matchedLocation != '/onboarding') return '/dashboard';
-        return null;
-      },
-      routes: [
-        GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
-        GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
-        GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
-        ShellRoute(
-          builder: (context, state, child) => AppShell(child: child),
-          routes: [
-            GoRoute(path: '/dashboard', builder: (_, __) => const HomeScreen()),
-            GoRoute(path: '/analytics', builder: (_, __) => const AnalyticsScreen()),
-            GoRoute(path: '/calendar', builder: (_, __) => const CalendarScreen()),
-            GoRoute(path: '/collaboration', builder: (_, __) => const CollaborationScreen()),
-            GoRoute(
-              path: '/settings',
-              builder: (_, __) => const SettingsScreen(),
-              routes: [
-                GoRoute(path: 'account', builder: (_, __) => const SettingsScreen(tab: 'account')),
-                GoRoute(path: 'connections', builder: (_, __) => const SettingsScreen(tab: 'connections')),
-                GoRoute(path: 'billing', builder: (_, __) => const SettingsScreen(tab: 'billing')),
-                GoRoute(path: 'security', builder: (_, __) => const SettingsScreen(tab: 'security')),
-              ],
-            ),
-          ],
-        ),
-      ],
-    );
+  late final StreamSubscription<dynamic> _sub;
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
   }
 }
