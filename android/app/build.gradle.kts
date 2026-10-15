@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.inprov.app"
+    namespace = "com.base68ad6941fe7e499d4b0516e7.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,7 +15,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.inprov.app"
+        applicationId = "com.base68ad6941fe7e499d4b0516e7.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23 // Firebase Auth + local_auth require API 23+
